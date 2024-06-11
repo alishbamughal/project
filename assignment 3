@@ -1,0 +1,67 @@
+import heapq
+
+class Graph:
+    def _init_(self):
+        self.vertices = {}
+
+    def add_vertex(self, vertex):
+        if vertex not in self.vertices:
+            self.vertices[vertex] = {}
+
+    def add_edge(self, src, dest, weight):
+        if src in self.vertices and dest in self.vertices:
+            self.vertices[src][dest] = weight
+
+    def dijkstra(self, src):
+        distances = {vertex: float('inf') for vertex in self.vertices}
+        distances[src] = 0
+        visited = set()
+        pq = [(0, src)]
+
+        while pq:
+            current_distance, current_vertex = heapq.heappop(pq)
+            if current_vertex in visited:
+                continue
+            visited.add(current_vertex)
+
+            for neighbor, weight in self.vertices[current_vertex].items():
+                distance = current_distance + weight
+                if distance < distances[neighbor]:
+                    distances[neighbor] = distance
+                    heapq.heappush(pq, (distance, neighbor))
+
+        return distances
+
+    def bellman_ford(self, src):
+        distances = {vertex: float('inf') for vertex in self.vertices}
+        distances[src] = 0
+
+        for _ in range(len(self.vertices) - 1):
+            for src_vertex in self.vertices:
+                for dest_vertex, weight in self.vertices[src_vertex].items():
+                    if distances[src_vertex] != float('inf') and distances[src_vertex] + weight < distances[dest_vertex]:
+                        distances[dest_vertex] = distances[src_vertex] + weight
+
+        # Check for negative cycles
+        for src_vertex in self.vertices:
+            for dest_vertex, weight in self.vertices[src_vertex].items():
+                if distances[src_vertex] != float('inf') and distances[src_vertex] + weight < distances[dest_vertex]:
+                    raise ValueError("Graph contains negative cycle")
+
+        return distances
+
+def read_graph_from_file(file_path):
+    graph = Graph()
+    with open(file_path, 'r') as file:
+        for line in file:
+            src, dest, weight = line.strip().split()
+            graph.add_vertex(src)
+            graph.add_vertex(dest)
+            graph.add_edge(src, dest, int(weight))
+    return graph
+
+# Example Usage
+graph = read_graph_from_file('graph_data.txt')
+source_node = 'A'
+print("Dijkstra's shortest paths:", graph.dijkstra(source_node))
+print("Bellman-Ford shortest paths:", graph.bellman_ford(source_node))
